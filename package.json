@@ -12,6 +12,6 @@
   "author": "martin-braun",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^29.0.0"
+    "electron": "^29.0.1"
   }
 }
