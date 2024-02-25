@@ -46,34 +46,62 @@ function createWindow() {
 
 function reorientViews() {
   const [width, height] = mainWindow.getSize();
-  if (urls.length < 4) {
-    // build up to 3 columns
+  // use euler as slave width multiplier
+  const slaveFact = Math.sqrt(3) / 2;
+  if (urls.length < 3) {
+    // build up to 2 columns
+    let x = 0;
     for (let i = 0; i < urls.length; i++) {
       const view = views[i];
       mainWindow.addBrowserView(view);
-      view.setBounds({
-        x: (i % urls.length) * Math.floor(width / urls.length),
+      const w = Math.floor(width / urls.length);
+      const b = {
+        x,
         y: 0,
-        width: Math.floor(width / urls.length),
+        width: w,
         height,
-      });
+      };
+      console.log(i, b);
+      view.setBounds(b);
+      x += w;
+    }
+  } else if (urls.length == 3) {
+    // build 3 columns with larger center column (tower)
+    let x = 0;
+    for (let i = 0; i < urls.length; i++) {
+      const view = views[i];
+      mainWindow.addBrowserView(view);
+      let w = Math.floor(width / urls.length);
+      w = Math.floor(i == 1 ? w / slaveFact : w * slaveFact);
+      const b = {
+        x,
+        y: 0,
+        width: w,
+        height,
+      };
+      console.log(i, b);
+      view.setBounds(b);
+      x += w;
     }
   } else if (urls.length == 5) {
     // build 2x2 tiles around center pane
+    let x = 0;
     for (let i = 0; i < urls.length; i++) {
       const view = views[i];
       mainWindow.addBrowserView(view);
-      view.setBounds({
-        x:
-          i < 2
-            ? 0
-            : i == 3
-            ? Math.floor(width / 4)
-            : Math.floor(width / 4) * 3,
+      let w = Math.floor(width / 3);
+      w = Math.floor(i == 2 ? w / slaveFact : w * slaveFact);
+      const b = {
+        x,
         y: i == 1 || i == 4 ? Math.floor(height / 2) : 0,
-        width: i == 3 ? Math.floor(width / 2) : Math.floor(width / 4),
-        height: i == 3 ? height : Math.floor(height / 2),
-      });
+        width: w,
+        height: i == 2 ? height : Math.floor(height / 2),
+      };
+      console.log(i, b);
+      view.setBounds(b);
+      if (i > 0 && i < 3) {
+        x += w;
+      }
     }
   } else {
     // build a 2 row grid
@@ -85,12 +113,14 @@ function reorientViews() {
       for (let c = 0; c < cols; c++) {
         const view = views[r * columns + c];
         mainWindow.addBrowserView(view);
-        view.setBounds({
+        const b = {
           x: c * Math.floor(width / cols),
           y: r * Math.floor(height / rows),
           width: Math.floor(width / cols),
           height: Math.floor(height / rows),
-        });
+        };
+        console.log(r, c, b);
+        view.setBounds(b);
       }
     }
   }
