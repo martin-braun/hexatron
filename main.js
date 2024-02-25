@@ -4,8 +4,10 @@ process.env.ELECTRON_ENABLE_EXPERIMENTAL_FEATURES = true;
 // Modules to control application life and create native browser window
 const { app, BrowserWindow, BrowserView } = require("electron");
 const path = require("node:path");
+const crypto = require("node:crypto");
 
 const urls = process.argv.slice(2).map((url) => `https://${url}`);
+const uid = crypto.createHash("sha256").update(urls.join("~")).digest("hex");
 
 let mainWindow;
 const views = [];
@@ -23,15 +25,19 @@ function createWindow() {
 
   for (let i = 0; i < urls.length; i++) {
     const url = urls[i];
+    const partition = `persist:${url}~${uid}#${i}`;
     const view = new BrowserView({
       webPreferences: {
-        partition: `persist:${i}~${url}`,
+        partition,
         nodeIntegration: false,
         contextIsolation: true,
       },
     });
     view.webContents.loadURL(url);
     views.push(view);
+    console.log(
+      `spawned partition ${partition}`
+    );
   }
 }
 
@@ -55,7 +61,12 @@ function reorientViews() {
       const view = views[i];
       mainWindow.addBrowserView(view);
       view.setBounds({
-        x: i < 2 ? 0 : i == 3 ? Math.floor(width / 4) : Math.floor(width / 4) * 3,
+        x:
+          i < 2
+            ? 0
+            : i == 3
+            ? Math.floor(width / 4)
+            : Math.floor(width / 4) * 3,
         y: i == 1 || i == 4 ? Math.floor(height / 2) : 0,
         width: i == 3 ? Math.floor(width / 2) : Math.floor(width / 4),
         height: i == 3 ? height : Math.floor(height / 2),
@@ -86,6 +97,7 @@ function reorientViews() {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  console.log(`uid: ${uid}`);
   createWindow();
 
   mainWindow.on("show", () => {
