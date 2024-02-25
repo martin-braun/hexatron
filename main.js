@@ -2,7 +2,7 @@
 process.env.ELECTRON_ENABLE_EXPERIMENTAL_FEATURES = true;
 
 // Modules to control application life and create native browser window
-const { app, shell, BrowserWindow, BrowserView } = require("electron");
+const { app, shell, session, BrowserWindow, BrowserView } = require("electron");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const axios = require("axios");
@@ -17,6 +17,7 @@ const uid = crypto
   .createHash("sha256")
   .update(urls.join("~").replaceAll(/\^/g, ""))
   .digest("hex");
+const needsDarkreader = urls.some((url) => url.startsWith("^"));
 
 const uaUrl = "https://useragents.me";
 const uaQry = ".ua-textarea";
@@ -24,7 +25,16 @@ let ua;
 
 const lightBg = "#eee";
 const darkBg = "#111";
-const darkreaderJsUrl = "https://unpkg.com/darkreader/darkreader.js";
+
+let initScript = `;`;
+if (needsDarkreader) {
+  fetch("https://unpkg.com/darkreader/darkreader.js").then((response) => {
+    response.text().then((script) => {
+      initScript += script;
+      initScript += `;DarkReader.enable();`;
+    });
+  });
+}
 
 let mainWindow;
 const views = [];
@@ -50,15 +60,14 @@ function createWindow() {
       backgroundColor: darkBg,
       webPreferences: {
         nodeIntegration: false,
-        contextIsolation: true,
+        contextIsolation: false,
       },
     });
     // Build the browser views
     for (let i = 0; i < urls.length; i++) {
       const url = urls[i];
-      const partition = `persist:${
-        url.startsWith("^") ? url.slice(1) : url
-      }~${uid}#${i}`;
+      const realUrl = url.startsWith("^") ? url.substring(1) : url;
+      const partition = `persist:${realUrl}~${uid}#${i}`;
       const view = new BrowserView({
         webPreferences: {
           partition,
@@ -66,36 +75,22 @@ function createWindow() {
           contextIsolation: true,
         },
       });
-      if (url.startsWith("^")) {
-        view.backgroundColor = darkBg;
-        view.webContents.loadURL(url.substring(1));
-        view.webContents.executeJavaScript(`
-          document.documentElement.style.backgroundColor = '${darkBg}';
-          document.body.style.display = 'none';
-          fetch('${darkreaderJsUrl}')
-            .then(response => response.text())
-            .then(script => {
-              const scriptElement = document.createElement('script');
-              scriptElement.type = 'text/javascript';
-              scriptElement.textContent = script;
-              document.head.appendChild(scriptElement);
-              DarkReader.enable();
-              document.body.style.display = 'block';
-            })
-            .catch(error => console.error('Error fetching Dark Reader script:', error));
-        `);
-      } else {
-        view.backgroundColor = lightBg;
-        view.webContents.loadURL(url);
-      }
+      view.backgroundColor = url.startsWith("^") ? darkBg : lightBg;
+      view.webContents.loadURL(realUrl);
+      view.webContents.executeJavaScript(initScript);
       view.webContents.userAgent = ua || view.webContents.getUserAgent();
       view.webContents.setWindowOpenHandler((details) => {
         shell.openExternal(details.url);
         return { action: "deny" };
       });
       view.webContents.on("did-finish-load", () => {
+        view.webContents.executeJavaScript(initScript);
+        if (mainWindow.getBrowserViews().includes(view)) {
+          return;
+        }
         mainWindow.addBrowserView(view);
       });
+
       views.push(view);
       console.log(`spawned partition ${partition}`);
     }
@@ -187,6 +182,8 @@ function reorientViews() {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   console.log(`uid: ${uid}`);
+
+  // Create the browser window.
   createWindow()
     .then(() => {
       mainWindow.on("show", () => {
