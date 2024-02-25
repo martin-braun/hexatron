@@ -15,10 +15,9 @@ command directly. I have no time for icons, metadata and distribution. Feel free
 - Install nvm or node 20
 - Clone the repository
 - `nvm use` (if you use nvm)
-- `npm install -g electron` or `npm install -g npx`
+- `npm install -g npx`
 - `npm install`
 - `npx electron . google.com youtube.com twitter.com github.com reddit.com facebook.com`
-    (ommit `npx`, if you installed `electron` with `npm install -g`)
 
 <center><kbd>![preview](preview.png)</kbd></center>
 
