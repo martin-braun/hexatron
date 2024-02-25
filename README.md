@@ -19,7 +19,7 @@ command directly. I have no time for icons, metadata and distribution. Feel free
 - `npm install`
 - `npx electron . google.com youtube.com twitter.com github.com reddit.com facebook.com`
 
-<center><kbd>![preview](preview.png)</kbd></center>
+<center><kbd><img src="preview.png" /></kbd></center>
 
 ## Features and Roadmap
 
