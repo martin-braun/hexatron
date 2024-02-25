@@ -1,40 +1,39 @@
-# electron-quick-start
+# hexatron
 
-**Clone and run for a quick way to see Electron in action.**
+Electron dashboard with six (or any amount of) isolated browser views in a grid tile layout.
 
-This is a minimal Electron application based on the [Quick Start Guide](https://electronjs.org/docs/latest/tutorial/quick-start) within the Electron documentation.
+Originally built to have a 6 pane dashboard, it can show as many panes as desired in up to 2 rows.
+It's recommend to limit it to 8 panes, or less.
 
-A basic Electron application needs just these files:
+## Download
 
-- `package.json` - Points to the app's main file and lists its details and dependencies.
-- `main.js` - Starts the app and creates a browser window to render HTML. This is the app's **main process**.
-- `index.html` - A web page to render. This is the app's **renderer process**.
-- `preload.js` - A content script that runs before the renderer process loads.
+There is no download, I do not plan to make a release. I use it for myself by calling the `electron`
+command directly. I have no time for icons, metadata and distribution. Feel free to build it yourself.
 
-You can learn more about each of these components in depth within the [Tutorial](https://electronjs.org/docs/latest/tutorial/tutorial-prerequisites).
+## Usage
 
-## To Use
+- Install nvm or node 20
+- Clone the repository
+- `nvm use` (if you use nvm)
+- `npm install -g electron` or `npm install -g npx`
+- `npm install`
+- `npx electron . google.com youtube.com twitter.com github.com reddit.com facebook.com`
+    (ommit `npx`, if you installed `electron` with `npm install -g`)
 
-To clone and run this repository you'll need [Git](https://git-scm.com) and [Node.js](https://nodejs.org/en/download/) (which comes with [npm](http://npmjs.com)) installed on your computer. From your command line:
+<center><kbd>![preview](preview.png)</kbd></center>
 
-```bash
-# Clone this repository
-git clone https://github.com/electron/electron-quick-start
-# Go into the repository
-cd electron-quick-start
-# Install dependencies
-npm install
-# Run the app
-npm start
-```
+## Features and Roadmap
 
-Note: If you're using Linux Bash for Windows, [see this guide](https://www.howtogeek.com/261575/how-to-run-graphical-linux-desktop-applications-from-windows-10s-bash-shell/) or use `node` from the command prompt.
-
-## Resources for Learning Electron
-
-- [electronjs.org/docs](https://electronjs.org/docs) - all of Electron's documentation
-- [Electron Fiddle](https://electronjs.org/fiddle) - Electron Fiddle, an app to test small Electron experiments
+- No resizing of panes
+- No icons
+- No metadata
+- No distribution
+- No build system
+- No tests
+- No documentation
+- No support
+- No roadmap
 
 ## License
 
-[CC0 1.0 (Public Domain)](LICENSE.md)
+MIT
