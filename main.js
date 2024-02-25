@@ -17,7 +17,6 @@ const uid = crypto
   .createHash("sha256")
   .update(urls.join("~").replaceAll(/\^/g, ""))
   .digest("hex");
-const needsDarkreader = urls.some((url) => url.startsWith("^"));
 
 const uaUrl = "https://useragents.me";
 const uaQry = ".ua-textarea";
@@ -27,19 +26,22 @@ const lightBg = "#eee";
 const darkBg = "#111";
 
 let initScript = `;`;
-if (needsDarkreader) {
-  fetch("https://unpkg.com/darkreader/darkreader.js").then((response) => {
-    response.text().then((script) => {
-      initScript += script;
-      initScript += `;DarkReader.enable();`;
-    });
-  });
-}
+let wantsDark = urls.some((url) => url.startsWith("^"));
 
 let mainWindow;
 const views = [];
 
 function createWindow() {
+  if (wantsDark) {
+    wantsDark = false;
+    return fetch("https://unpkg.com/darkreader/darkreader.js").then((response) => {
+      response.text().then((script) => {
+        initScript += script;
+        initScript += `;DarkReader.enable();`;
+      });
+      return createWindow();
+    });
+  }
   if (!ua) {
     // Find a good user agent
     return axios.get(uaUrl).then((res) => {
@@ -170,7 +172,7 @@ function reorientViews() {
           width: Math.floor(width / cols),
           height: Math.floor(height / rows),
         };
-        console.log(r, c, b);
+        // console.log(r, c, b);
         view.setBounds(b);
       }
     }
