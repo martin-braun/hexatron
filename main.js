@@ -8,12 +8,23 @@ const crypto = require("node:crypto");
 const axios = require("axios");
 const cheerio = require("cheerio");
 
-const urls = process.argv.slice(2).map((url) => `https://${url}`);
-const uid = crypto.createHash("sha256").update(urls.join("~")).digest("hex");
+const urls = process.argv
+  .slice(2)
+  .map((url) =>
+    url.startsWith("^") ? `^https://${url.slice(1)}` : `https://${url}`
+  );
+const uid = crypto
+  .createHash("sha256")
+  .update(urls.join("~").replaceAll(/\^/g, ""))
+  .digest("hex");
 
 const uaUrl = "https://useragents.me";
 const uaQry = ".ua-textarea";
 let ua;
+
+const lightBg = "#eee";
+const darkBg = "#111";
+const darkreaderJsUrl = "https://unpkg.com/darkreader/darkreader.js";
 
 let mainWindow;
 const views = [];
@@ -36,7 +47,7 @@ function createWindow() {
     // Create the browser window.
     mainWindow = new BrowserWindow({
       fullscreen: true,
-      backgroundColor: "#000000",
+      backgroundColor: darkBg,
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
@@ -45,7 +56,9 @@ function createWindow() {
     // Build the browser views
     for (let i = 0; i < urls.length; i++) {
       const url = urls[i];
-      const partition = `persist:${url}~${uid}#${i}`;
+      const partition = `persist:${
+        url.startsWith("^") ? url.slice(1) : url
+      }~${uid}#${i}`;
       const view = new BrowserView({
         webPreferences: {
           partition,
@@ -53,11 +66,35 @@ function createWindow() {
           contextIsolation: true,
         },
       });
-      view.webContents.loadURL(url);
+      if (url.startsWith("^")) {
+        view.backgroundColor = darkBg;
+        view.webContents.loadURL(url.substring(1));
+        view.webContents.executeJavaScript(`
+          document.documentElement.style.backgroundColor = '${darkBg}';
+          document.body.style.display = 'none';
+          fetch('${darkreaderJsUrl}')
+            .then(response => response.text())
+            .then(script => {
+              const scriptElement = document.createElement('script');
+              scriptElement.type = 'text/javascript';
+              scriptElement.textContent = script;
+              document.head.appendChild(scriptElement);
+              DarkReader.enable();
+              document.body.style.display = 'block';
+            })
+            .catch(error => console.error('Error fetching Dark Reader script:', error));
+        `);
+      } else {
+        view.backgroundColor = lightBg;
+        view.webContents.loadURL(url);
+      }
       view.webContents.userAgent = ua || view.webContents.getUserAgent();
       view.webContents.setWindowOpenHandler((details) => {
         shell.openExternal(details.url);
         return { action: "deny" };
+      });
+      view.webContents.on("did-finish-load", () => {
+        mainWindow.addBrowserView(view);
       });
       views.push(view);
       console.log(`spawned partition ${partition}`);
@@ -76,7 +113,6 @@ function reorientViews() {
     let x = 0;
     for (let i = 0; i < urls.length; i++) {
       const view = views[i];
-      mainWindow.addBrowserView(view);
       const w = Math.floor(width / urls.length);
       const b = {
         x,
@@ -84,7 +120,7 @@ function reorientViews() {
         width: w,
         height,
       };
-      console.log(i, b);
+      // console.log(i, b);
       view.setBounds(b);
       x += w;
     }
@@ -93,7 +129,6 @@ function reorientViews() {
     let x = 0;
     for (let i = 0; i < urls.length; i++) {
       const view = views[i];
-      mainWindow.addBrowserView(view);
       let w = Math.floor(width / urls.length);
       w = Math.floor(i == 1 ? w / slaveFact : w * slaveFact);
       const b = {
@@ -102,7 +137,7 @@ function reorientViews() {
         width: w,
         height,
       };
-      console.log(i, b);
+      // console.log(i, b);
       view.setBounds(b);
       x += w;
     }
@@ -111,7 +146,6 @@ function reorientViews() {
     let x = 0;
     for (let i = 0; i < urls.length; i++) {
       const view = views[i];
-      mainWindow.addBrowserView(view);
       let w = Math.floor(width / 3);
       w = Math.floor(i == 2 ? w / slaveFact : w * slaveFact);
       const b = {
@@ -120,7 +154,7 @@ function reorientViews() {
         width: w,
         height: i == 2 ? height : Math.floor(height / 2),
       };
-      console.log(i, b);
+      // console.log(i, b);
       view.setBounds(b);
       if (i > 0 && i < 3) {
         x += w;
@@ -135,7 +169,6 @@ function reorientViews() {
       const cols = r < rows - 1 ? columns : columnsLastRow;
       for (let c = 0; c < cols; c++) {
         const view = views[r * columns + c];
-        mainWindow.addBrowserView(view);
         const b = {
           x: c * Math.floor(width / cols),
           y: r * Math.floor(height / rows),
