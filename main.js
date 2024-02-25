@@ -2,7 +2,7 @@
 process.env.ELECTRON_ENABLE_EXPERIMENTAL_FEATURES = true;
 
 // Modules to control application life and create native browser window
-const { app, BrowserWindow, BrowserView } = require("electron");
+const { app, shell, BrowserWindow, BrowserView } = require("electron");
 const path = require("node:path");
 const crypto = require("node:crypto");
 
@@ -34,10 +34,13 @@ function createWindow() {
       },
     });
     view.webContents.loadURL(url);
+    view.webContents.setWindowOpenHandler((details) => {
+      shell.openExternal(details.url);
+      return { action: "deny" };
+    });
+
     views.push(view);
-    console.log(
-      `spawned partition ${partition}`
-    );
+    console.log(`spawned partition ${partition}`);
   }
 }
 
