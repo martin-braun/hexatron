@@ -60,7 +60,7 @@ function createWindow() {
       backgroundColor: darkBg,
       webPreferences: {
         nodeIntegration: false,
-        contextIsolation: false,
+        contextIsolation: true,
       },
     });
     // Build the browser views
