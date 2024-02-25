@@ -7,11 +7,14 @@
     "start": "electron ."
   },
   "repository": "https://github.com/martin-braun/hexatron",
-  "keywords": [
-  ],
+  "keywords": [],
   "author": "martin-braun",
   "license": "MIT",
   "devDependencies": {
     "electron": "^29.0.1"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "cheerio": "^1.0.0-rc.12"
   }
 }

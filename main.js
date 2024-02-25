@@ -5,46 +5,69 @@ process.env.ELECTRON_ENABLE_EXPERIMENTAL_FEATURES = true;
 const { app, shell, BrowserWindow, BrowserView } = require("electron");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const axios = require("axios");
+const cheerio = require("cheerio");
 
 const urls = process.argv.slice(2).map((url) => `https://${url}`);
 const uid = crypto.createHash("sha256").update(urls.join("~")).digest("hex");
+
+const uaUrl = "https://useragents.me";
+const uaQry = ".ua-textarea";
+let ua;
 
 let mainWindow;
 const views = [];
 
 function createWindow() {
-  // Create the browser window.
-  mainWindow = new BrowserWindow({
-    fullscreen: true,
-    backgroundColor: "#000000",
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-    },
-  });
-
-  for (let i = 0; i < urls.length; i++) {
-    const url = urls[i];
-    const partition = `persist:${url}~${uid}#${i}`;
-    const view = new BrowserView({
+  if (!ua) {
+    // Find a good user agent
+    return axios.get(uaUrl).then((res) => {
+      console.log(`ua status: ${res.status}`);
+      const $ = cheerio.load(res.data);
+      ua = $(uaQry).first().text();
+      console.log(`user agent: ${ua}`);
+      if (!ua) {
+        throw new Error(`no user agent found`);
+      }
+      return createWindow();
+    });
+  }
+  return new Promise((resolve, reject) => {
+    // Create the browser window.
+    mainWindow = new BrowserWindow({
+      fullscreen: true,
+      backgroundColor: "#000000",
       webPreferences: {
-        partition,
         nodeIntegration: false,
         contextIsolation: true,
       },
     });
-    view.webContents.loadURL(url);
-    view.webContents.setWindowOpenHandler((details) => {
-      shell.openExternal(details.url);
-      return { action: "deny" };
-    });
-
-    views.push(view);
-    console.log(`spawned partition ${partition}`);
-  }
+    // Build the browser views
+    for (let i = 0; i < urls.length; i++) {
+      const url = urls[i];
+      const partition = `persist:${url}~${uid}#${i}`;
+      const view = new BrowserView({
+        webPreferences: {
+          partition,
+          nodeIntegration: false,
+          contextIsolation: true,
+        },
+      });
+      view.webContents.loadURL(url);
+      view.webContents.userAgent = ua || view.webContents.getUserAgent();
+      view.webContents.setWindowOpenHandler((details) => {
+        shell.openExternal(details.url);
+        return { action: "deny" };
+      });
+      views.push(view);
+      console.log(`spawned partition ${partition}`);
+    }
+    resolve();
+  });
 }
 
 function reorientViews() {
+  if (BrowserWindow.getAllWindows().length === 0) return;
   const [width, height] = mainWindow.getSize();
   // use euler as slave width multiplier
   const slaveFact = Math.sqrt(3) / 2;
@@ -131,28 +154,23 @@ function reorientViews() {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   console.log(`uid: ${uid}`);
-  createWindow();
-
-  mainWindow.on("show", () => {
-    // Wait for the window to be ready to show, then get its dimensions
-    // and build the views.
-    reorientViews();
-    mainWindow.on("resize", reorientViews);
-  });
-
-  app.on("activate", function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
+  createWindow()
+    .then(() => {
+      mainWindow.on("show", () => {
+        // Wait for the window to be ready to show, then get its dimensions
+        // and build the views.
+        reorientViews();
+        mainWindow.on("resize", reorientViews);
+      });
+    })
+    .catch((err) => {
+      console.error(err);
+      app.quit();
+    });
 });
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
+// Quit when all windows are closed, also on macOS since
+// app is temporary and don't has a unique icon on the dock.
 app.on("window-all-closed", function () {
-  if (process.platform !== "darwin") app.quit();
+  app.quit();
 });
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
