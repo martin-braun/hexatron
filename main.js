@@ -5,12 +5,10 @@ process.env.ELECTRON_ENABLE_EXPERIMENTAL_FEATURES = true;
 const {
   app,
   shell,
-  session,
   BrowserWindow,
   BrowserView,
   nativeTheme,
 } = require("electron");
-const path = require("node:path");
 const crypto = require("node:crypto");
 const axios = require("axios");
 const cheerio = require("cheerio");
