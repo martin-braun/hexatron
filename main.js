@@ -2,7 +2,14 @@
 process.env.ELECTRON_ENABLE_EXPERIMENTAL_FEATURES = true;
 
 // Modules to control application life and create native browser window
-const { app, shell, session, BrowserWindow, BrowserView } = require("electron");
+const {
+  app,
+  shell,
+  session,
+  BrowserWindow,
+  BrowserView,
+  nativeTheme,
+} = require("electron");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const axios = require("axios");
@@ -22,25 +29,27 @@ const uaUrl = "https://useragents.me";
 const uaQry = ".ua-textarea";
 let ua;
 
-const lightBg = "#eee";
-const darkBg = "#111";
+const lightBg = "#f0f0f0";
+const darkBg = "#121212";
 
-let initScript = `;`;
+let initDarkScript;
 let wantsDark = urls.some((url) => url.startsWith("^"));
+nativeTheme.themeSource = wantsDark ? "dark" : "light";
 
 let mainWindow;
 const views = [];
 
-function createWindow() {
-  if (wantsDark) {
+function createWindow(debug) {
+  if (wantsDark && !initDarkScript) {
     wantsDark = false;
-    return fetch("https://unpkg.com/darkreader/darkreader.js").then((response) => {
-      response.text().then((script) => {
-        initScript += script;
-        initScript += `;DarkReader.enable();`;
-      });
-      return createWindow();
-    });
+    return fetch("https://unpkg.com/darkreader/darkreader.js").then(
+      (response) => {
+        response.text().then((script) => {
+          initDarkScript = `${script};DarkReader.enable();`;
+        });
+        return createWindow(debug);
+      }
+    );
   }
   if (!ua) {
     // Find a good user agent
@@ -52,14 +61,14 @@ function createWindow() {
       if (!ua) {
         throw new Error(`no user agent found`);
       }
-      return createWindow();
+      return createWindow(debug);
     });
   }
   return new Promise((resolve, reject) => {
     // Create the browser window.
     mainWindow = new BrowserWindow({
       fullscreen: true,
-      backgroundColor: darkBg,
+      backgroundColor: wantsDark ? darkBg : lightBg,
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
@@ -68,31 +77,37 @@ function createWindow() {
     // Build the browser views
     for (let i = 0; i < urls.length; i++) {
       const url = urls[i];
-      const realUrl = url.startsWith("^") ? url.substring(1) : url;
+      const dark = url.startsWith("^");
+      const realUrl = dark ? url.substring(1) : url;
       const partition = `persist:${realUrl}~${uid}#${i}`;
       const view = new BrowserView({
+        backgroundColor: dark ? darkBg : lightBg,
         webPreferences: {
           partition,
           nodeIntegration: false,
           contextIsolation: true,
         },
       });
-      view.backgroundColor = url.startsWith("^") ? darkBg : lightBg;
-      view.webContents.loadURL(realUrl);
-      view.webContents.executeJavaScript(initScript);
       view.webContents.userAgent = ua || view.webContents.getUserAgent();
       view.webContents.setWindowOpenHandler((details) => {
         shell.openExternal(details.url);
         return { action: "deny" };
       });
       view.webContents.on("did-finish-load", () => {
-        view.webContents.executeJavaScript(initScript);
+        if (dark) {
+          view.webContents.executeJavaScript(initDarkScript);
+        }
         if (mainWindow.getBrowserViews().includes(view)) {
           return;
         }
         mainWindow.addBrowserView(view);
+        if (debug) {
+          console.log(`open devtools on partition ${partition}`);
+          mainWindow.webContents.openDevTools();
+          view.webContents.openDevTools();
+        }
       });
-
+      view.webContents.loadURL(realUrl);
       views.push(view);
       console.log(`spawned partition ${partition}`);
     }
@@ -186,7 +201,7 @@ app.whenReady().then(() => {
   console.log(`uid: ${uid}`);
 
   // Create the browser window.
-  createWindow()
+  createWindow(process.env.NODE_ENV === "development") // debug?
     .then(() => {
       mainWindow.on("show", () => {
         // Wait for the window to be ready to show, then get its dimensions
