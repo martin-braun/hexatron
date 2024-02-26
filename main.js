@@ -64,7 +64,7 @@ function createWindow(debug) {
       return createWindow(debug);
     });
   }
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     // Create the browser window.
     mainWindow = new BrowserWindow({
       fullscreen: true,
