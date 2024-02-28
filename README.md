@@ -21,9 +21,11 @@ command directly. I have no time for icons, metadata and distribution. Feel free
 
 <center><kbd><img src="preview.png" /></kbd></center>
 
-> Note: Prepend a short url with `^` to inject DarkReader.
-
 ## Features and Roadmap
+
+- DarkReader support: Prefix a short url with `^` to inject it
+
+BUT:
 
 - No resizing of panes
 - No icons

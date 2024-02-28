@@ -116,8 +116,10 @@ function createWindow(debug) {
 function reorientViews() {
   if (BrowserWindow.getAllWindows().length === 0) return;
   const [width, height] = mainWindow.getSize();
+  console.log("screen", mainWindow.getSize());
   // use euler as slave width multiplier
   const slaveFact = Math.sqrt(3) / 2;
+  console.log("slave fact", slaveFact);
   if (urls.length < 3) {
     // build up to 2 columns
     let x = 0;
@@ -130,7 +132,7 @@ function reorientViews() {
         width: w,
         height,
       };
-      // console.log(i, b);
+      console.log(i, b);
       view.setBounds(b);
       x += w;
     }
@@ -139,15 +141,17 @@ function reorientViews() {
     let x = 0;
     for (let i = 0; i < urls.length; i++) {
       const view = views[i];
-      let w = Math.floor(width / urls.length);
-      w = Math.floor(i == 1 ? w / slaveFact : w * slaveFact);
+      let w = Math.floor(width / 3 * slaveFact);
+      if (i == 2) {
+        w = Math.ceil(width - 2 * w);
+      }
       const b = {
         x,
         y: 0,
         width: w,
         height,
       };
-      // console.log(i, b);
+      console.log(i, b);
       view.setBounds(b);
       x += w;
     }
@@ -156,15 +160,17 @@ function reorientViews() {
     let x = 0;
     for (let i = 0; i < urls.length; i++) {
       const view = views[i];
-      let w = Math.floor(width / 3);
-      w = Math.floor(i == 2 ? w / slaveFact : w * slaveFact);
+      let w = Math.floor(width / 3 * slaveFact);
+      if (i == 2) {
+        w = Math.ceil(width - 2 * w);
+      }
       const b = {
         x,
         y: i == 1 || i == 4 ? Math.floor(height / 2) : 0,
         width: w,
         height: i == 2 ? height : Math.floor(height / 2),
       };
-      // console.log(i, b);
+      console.log(i, b);
       view.setBounds(b);
       if (i > 0 && i < 3) {
         x += w;
