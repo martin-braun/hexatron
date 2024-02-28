@@ -54,7 +54,10 @@ function createWindow(debug) {
     return axios.get(uaUrl).then((res) => {
       console.log(`ua status: ${res.status}`);
       const $ = cheerio.load(res.data);
-      ua = $(uaQry).first().text();
+      ua = $(uaQry)
+        .filter((_, el) => $(el).text().includes("Chrome"))
+        .first()
+        .text();
       console.log(`user agent: ${ua}`);
       if (!ua) {
         throw new Error(`no user agent found`);
@@ -141,7 +144,7 @@ function reorientViews() {
     let x = 0;
     for (let i = 0; i < urls.length; i++) {
       const view = views[i];
-      let w = Math.floor(width / 3 * slaveFact);
+      let w = Math.floor((width / 3) * slaveFact);
       if (i == 2) {
         w = Math.ceil(width - 2 * w);
       }
@@ -160,7 +163,7 @@ function reorientViews() {
     let x = 0;
     for (let i = 0; i < urls.length; i++) {
       const view = views[i];
-      let w = Math.floor(width / 3 * slaveFact);
+      let w = Math.floor((width / 3) * slaveFact);
       if (i == 2) {
         w = Math.ceil(width - 2 * w);
       }
