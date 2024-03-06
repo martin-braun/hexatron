@@ -145,7 +145,7 @@ function reorientViews() {
     for (let i = 0; i < urls.length; i++) {
       const view = views[i];
       let w = Math.floor((width / 3) * slaveFact);
-      if (i == 2) {
+      if (i == 1) {
         w = Math.ceil(width - 2 * w);
       }
       const b = {
