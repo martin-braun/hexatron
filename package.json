@@ -12,7 +12,7 @@
   "author": "martin-braun",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^29.2.0"
+    "electron": "^30.0.0"
   },
   "dependencies": {
     "axios": "^1.6.7",
