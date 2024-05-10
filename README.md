@@ -15,9 +15,8 @@ command directly. I have no time for icons, metadata and distribution. Feel free
 - Install nvm or node 20
 - Clone the repository
 - `nvm use` (if you use nvm)
-- `npm install -g npx`
 - `npm install`
-- `npx electron . google.com youtube.com twitter.com github.com reddit.com facebook.com`
+- `NODE_ENV=production npm start -- google.com youtube.com twitter.com github.com reddit.com facebook.com`
 
 <center><kbd><img src="preview.png" /></kbd></center>
 
